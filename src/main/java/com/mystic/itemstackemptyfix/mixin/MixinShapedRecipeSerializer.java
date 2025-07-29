@@ -1,5 +1,6 @@
 package com.mystic.itemstackemptyfix.mixin;
 
+import com.mojang.logging.LogUtils;
 import com.mystic.itemstackemptyfix.RecipePatcher;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -18,7 +19,7 @@ public class MixinShapedRecipeSerializer {
     @Inject(method = "toNetwork", at = @At("HEAD"), cancellable = true)
     private static void toNetworkPatch(RegistryFriendlyByteBuf buf, ShapedRecipe recipe, CallbackInfo ci) {
         if (RecipePatcher.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {
-            System.out.println("[Mixin] BLOCKED broken ShapedRecipe: " + recipe.getGroup());
+            LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapedRecipe: {}", recipe.getGroup());
             ci.cancel();
         }
     }
@@ -42,13 +43,13 @@ public class MixinShapedRecipeSerializer {
             ItemStack result = ItemStack.STREAM_CODEC.decode(buf);
 
             if (RecipePatcher.isBroken(result, ingredients)) {
-                System.out.println("[Mixin] BLOCKED broken ShapedRecipe: " + group);
+                LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapedRecipe: {}", group);
                 cir.setReturnValue(null);
             }
 
             // If all good, let vanilla deserialize normally (cancel injection, allow normal return)
         } catch (Exception e) {
-            System.err.println("[Mixin] Exception reading ShapedRecipe: " + e);
+            LogUtils.getLogger().error("[Mixin] Exception reading ShapedRecipe: {}", e.getMessage());
             cir.setReturnValue(null);
         }
     }

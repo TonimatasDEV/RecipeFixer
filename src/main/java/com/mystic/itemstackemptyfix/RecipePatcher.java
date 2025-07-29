@@ -8,14 +8,17 @@ public class RecipePatcher {
         if (result == null || result.isEmpty()) {
             return true;
         }
+        
         for (Ingredient ingredient : ingredients) {
             if (ingredient == null) return true;
+
             for (ItemStack stack : ingredient.getItems()) {
                 if (stack == null || stack.isEmpty()) {
                     return true;
                 }
             }
         }
+
         return false;
     }
 }

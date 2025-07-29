@@ -1,5 +1,6 @@
 package com.mystic.itemstackemptyfix.mixin;
 
+import com.mojang.logging.LogUtils;
 import com.mystic.itemstackemptyfix.RecipePatcher;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -18,7 +19,7 @@ public class MixinShapelessRecipeSerializer {
     @Inject(method = "toNetwork", at = @At("HEAD"), cancellable = true)
     private static void toNetworkPatch(RegistryFriendlyByteBuf buf, ShapelessRecipe recipe, CallbackInfo ci) {
         if (RecipePatcher.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {
-            System.out.println("[Mixin] BLOCKED broken ShapelessRecipe: " + recipe.getGroup());
+            LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapelessRecipe: {}", recipe.getGroup());
             ci.cancel();
         }
     }
@@ -37,7 +38,7 @@ public class MixinShapelessRecipeSerializer {
                     Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
                     ingredients.add(ingredient);
                 } catch (Exception e) {
-                    System.err.println("[Mixin] Replacing corrupt ingredient in '" + group + "': " + e);
+                    LogUtils.getLogger().error("[Mixin] Replacing corrupt ingredient in '{}': ", group);
                     ingredients.add(Ingredient.EMPTY);
                 }
             }
@@ -45,14 +46,14 @@ public class MixinShapelessRecipeSerializer {
             ItemStack result = ItemStack.STREAM_CODEC.decode(buf);
 
             if (result == null || result.isEmpty()) {
-                System.err.println("[Mixin] Skipping shapeless recipe with empty result: " + group);
+                LogUtils.getLogger().error("[Mixin] Skipping shapeless recipe with empty result: {}", group);
                 cir.setReturnValue(null);
                 return;
             }
 
             cir.setReturnValue(new ShapelessRecipe(group, category, result, ingredients));
         } catch (Exception ex) {
-            System.err.println("[Mixin] Exception decoding ShapelessRecipe: " + ex);
+            LogUtils.getLogger().error("[Mixin] Exception decoding ShapelessRecipe: {}", ex.getMessage());
             cir.setReturnValue(null);
         }
     }

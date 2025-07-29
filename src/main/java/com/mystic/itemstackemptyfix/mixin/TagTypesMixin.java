@@ -1,5 +1,6 @@
 package com.mystic.itemstackemptyfix.mixin;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.TagType;
 import net.minecraft.nbt.TagTypes;
 import net.minecraft.nbt.EndTag;
@@ -25,6 +26,7 @@ public class TagTypesMixin {
             return TYPES[id];
         }
 
+        LogUtils.getLogger().error("[TagTypesMixin] Warning: Invalid tag ID: {}  — returning EndTag.TYPE as fallback.", id);
         System.err.println("[TagTypesMixin] Warning: Invalid tag ID: " + id + " — returning EndTag.TYPE as fallback.");
         return EndTag.TYPE; // Safe no-op tag that won't crash
     }
