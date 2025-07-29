@@ -18,8 +18,7 @@ public class TagTypesMixin {
      */
     @Redirect(method = "getType", at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/TagType;createInvalid(I)Lnet/minecraft/nbt/TagType;"))
     private static TagType<?> fixer$getType(int id) {
-        LogUtils.getLogger().error("[TagTypesMixin] Warning: Invalid tag ID: {}  — returning EndTag.TYPE as fallback.", id);
-        System.err.println("[TagTypesMixin] Warning: Invalid tag ID: " + id + " — returning EndTag.TYPE as fallback.");
+        LogUtils.getLogger().warn("[TagTypesMixin] Warning: Invalid tag ID: {}  — returning EndTag.TYPE as fallback.", id);
         return EndTag.TYPE; // Safe no-op tag that won't crash
     }
 }
