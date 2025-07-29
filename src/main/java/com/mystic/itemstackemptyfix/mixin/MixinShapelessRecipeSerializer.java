@@ -28,7 +28,15 @@ public class MixinShapelessRecipeSerializer {
     private static void fromNetworkPatch(RegistryFriendlyByteBuf buf, CallbackInfoReturnable<ShapelessRecipe> cir) {
         try {
             String group = buf.readUtf();
-            CraftingBookCategory category = CraftingBookCategory.STREAM_CODEC.decode(buf);
+
+            CraftingBookCategory category;
+            try {
+                category = CraftingBookCategory.STREAM_CODEC.decode(buf);
+            } catch (Exception e) {
+                LogUtils.getLogger().error("[Mixin] Failed to decode CraftingBookCategory in '{}': {}", group, e.toString());
+                cir.setReturnValue(null);
+                return;
+            }
 
             int ingredientCount = buf.readVarInt();
             NonNullList<Ingredient> ingredients = NonNullList.create();
@@ -38,12 +46,19 @@ public class MixinShapelessRecipeSerializer {
                     Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
                     ingredients.add(ingredient);
                 } catch (Exception e) {
-                    LogUtils.getLogger().error("[Mixin] Replacing corrupt ingredient in '{}': ", group);
+                    LogUtils.getLogger().warn("[Mixin] Replacing corrupt ingredient at index {} in '{}': {}", i, group, e.toString());
                     ingredients.add(Ingredient.EMPTY);
                 }
             }
 
-            ItemStack result = ItemStack.STREAM_CODEC.decode(buf);
+            ItemStack result;
+            try {
+                result = ItemStack.STREAM_CODEC.decode(buf);
+            } catch (Exception e) {
+                LogUtils.getLogger().error("[Mixin] Failed to decode result ItemStack in '{}': {}", group, e.toString());
+                cir.setReturnValue(null);
+                return;
+            }
 
             if (result == null || result.isEmpty()) {
                 LogUtils.getLogger().error("[Mixin] Skipping shapeless recipe with empty result: {}", group);
@@ -53,7 +68,7 @@ public class MixinShapelessRecipeSerializer {
 
             cir.setReturnValue(new ShapelessRecipe(group, category, result, ingredients));
         } catch (Exception ex) {
-            LogUtils.getLogger().error("[Mixin] Exception decoding ShapelessRecipe: {}", ex.getMessage());
+            LogUtils.getLogger().error("[Mixin] Unexpected error decoding ShapelessRecipe: {}", ex.toString());
             cir.setReturnValue(null);
         }
     }

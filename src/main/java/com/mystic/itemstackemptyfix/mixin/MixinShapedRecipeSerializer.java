@@ -8,6 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.ShapedRecipePattern;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,29 +28,39 @@ public class MixinShapedRecipeSerializer {
     @Inject(method = "fromNetwork", at = @At("HEAD"), cancellable = true)
     private static void fromNetworkPatch(RegistryFriendlyByteBuf buf, CallbackInfoReturnable<ShapedRecipe> cir) {
         try {
-            // Read group and category first (match ShapedRecipe constructor)
             String group = buf.readUtf();
-            CraftingBookCategory category = CraftingBookCategory.STREAM_CODEC.decode(buf);
 
-            int width = buf.readVarInt();
-            int height = buf.readVarInt();
+            // Safe decode CraftingBookCategory
+            int categoryOrdinal = buf.readVarInt();
+            CraftingBookCategory[] categories = CraftingBookCategory.values();
+            if (categoryOrdinal < 0 || categoryOrdinal >= categories.length) {
+                LogUtils.getLogger().error("[Mixin] Invalid CraftingBookCategory index in shaped recipe '{}': {}", group, categoryOrdinal);
+                cir.setReturnValue(null);
+                return;
+            }
+            CraftingBookCategory category = categories[categoryOrdinal];
 
-            // Read ingredients count = width * height
-            NonNullList<Ingredient> ingredients = NonNullList.withSize(width * height, Ingredient.EMPTY);
-            for (int i = 0; i < width * height; ++i) {
-                ingredients.set(i, Ingredient.CONTENTS_STREAM_CODEC.decode(buf));
+            // Safely decode pattern
+            ShapedRecipePattern pattern;
+            try {
+                pattern = ShapedRecipePattern.STREAM_CODEC.decode(buf);
+            } catch (Exception patternEx) {
+                LogUtils.getLogger().error("[Mixin] Failed to decode ShapedRecipePattern in '{}': {}", group, patternEx.toString());
+                cir.setReturnValue(null);
+                return;
             }
 
             ItemStack result = ItemStack.STREAM_CODEC.decode(buf);
 
-            if (RecipePatcher.isBroken(result, ingredients)) {
+            if (RecipePatcher.isBroken(result, pattern.ingredients())) {
                 LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapedRecipe: {}", group);
                 cir.setReturnValue(null);
+                return;
             }
 
-            // If all good, let vanilla deserialize normally (cancel injection, allow normal return)
+            cir.setReturnValue(new ShapedRecipe(group, category, pattern, result));
         } catch (Exception e) {
-            LogUtils.getLogger().error("[Mixin] Exception reading ShapedRecipe: {}", e.getMessage());
+            LogUtils.getLogger().error("[Mixin] Exception decoding shaped recipe '{}': {}", e.getClass().getSimpleName(), e.getMessage());
             cir.setReturnValue(null);
         }
     }
