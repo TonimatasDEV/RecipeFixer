@@ -5,6 +5,7 @@
   "refmap": "itemstackemptyfix.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "MixinClientboundUpdateRecipesPacket",
     "MixinShapedRecipeSerializer",
     "MixinShapelessRecipeSerializer",
     "TagTypesMixin"
