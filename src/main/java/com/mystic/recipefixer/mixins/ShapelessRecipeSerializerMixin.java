@@ -1,7 +1,7 @@
-package com.mystic.itemstackemptyfix.mixin;
+package com.mystic.recipefixer.mixins;
 
 import com.mojang.logging.LogUtils;
-import com.mystic.itemstackemptyfix.RecipePatcher;
+import com.mystic.recipefixer.util.RecipeUtil;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
@@ -15,10 +15,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(targets = "net.minecraft.world.item.crafting.ShapelessRecipe$Serializer")
-public class MixinShapelessRecipeSerializer {
+public class ShapelessRecipeSerializerMixin {
     @Inject(method = "toNetwork", at = @At("HEAD"), cancellable = true)
     private static void toNetworkPatch(RegistryFriendlyByteBuf buf, ShapelessRecipe recipe, CallbackInfo ci) {
-        if (RecipePatcher.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {
+        if (RecipeUtil.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {
             LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapelessRecipe: {}", recipe.getGroup());
             ci.cancel();
         }

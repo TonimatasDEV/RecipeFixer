@@ -1,9 +1,9 @@
-package com.mystic.itemstackemptyfix;
+package com.mystic.recipefixer.util;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-public class RecipePatcher {
+public class RecipeUtil {
     public static boolean isBroken(ItemStack result, Iterable<Ingredient> ingredients) {
         if (result == null || result.isEmpty()) {
             return true;

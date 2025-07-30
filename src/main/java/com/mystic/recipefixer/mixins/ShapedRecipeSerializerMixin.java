@@ -1,7 +1,7 @@
 package com.mystic.itemstackemptyfix.mixin;
 
 import com.mojang.logging.LogUtils;
-import com.mystic.itemstackemptyfix.RecipePatcher;
+import com.mystic.recipefixer.util.RecipeUtil;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinShapedRecipeSerializer {
     @Inject(method = "toNetwork", at = @At("HEAD"), cancellable = true)
     private static void toNetworkPatch(RegistryFriendlyByteBuf buf, ShapedRecipe recipe, CallbackInfo ci) {
-        if (RecipePatcher.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {
+        if (RecipeUtil.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {
             LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapedRecipe: {}", recipe.getGroup());
             ci.cancel();
         }
@@ -52,7 +52,7 @@ public class MixinShapedRecipeSerializer {
 
             ItemStack result = ItemStack.STREAM_CODEC.decode(buf);
 
-            if (RecipePatcher.isBroken(result, pattern.ingredients())) {
+            if (RecipeUtil.isBroken(result, pattern.ingredients())) {
                 LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapedRecipe: {}", group);
                 cir.setReturnValue(null);
                 return;
