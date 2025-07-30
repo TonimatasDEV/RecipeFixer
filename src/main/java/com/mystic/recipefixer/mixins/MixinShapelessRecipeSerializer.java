@@ -1,11 +1,6 @@
 package com.mystic.recipefixer.mixins;
 
 import com.mojang.logging.LogUtils;
-<<<<<<< HEAD:src/main/java/com/mystic/itemstackemptyfix/mixin/MixinShapelessRecipeSerializer.java
-=======
-import com.mystic.recipefixer.util.RecipeUtil;
-import net.minecraft.core.NonNullList;
->>>>>>> 0984ca661f9b1dcb1f2d9f4eee0db753936343e4:src/main/java/com/mystic/recipefixer/mixins/ShapelessRecipeSerializerMixin.java
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;

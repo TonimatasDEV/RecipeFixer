@@ -1,10 +1,8 @@
 package com.mystic.recipefixer.mixins;
 
 import com.mojang.logging.LogUtils;
-import com.mystic.recipefixer.util.RecipeUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import org.slf4j.Logger;

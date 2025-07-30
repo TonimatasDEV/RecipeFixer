@@ -6,9 +6,9 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ClientboundUpdateRecipesPacketMixin",
-    "ShapedRecipeSerializerMixin",
-    "ShapelessRecipeSerializerMixin",
-    "ShapedRecipeSerializerMixin",
+    "MixinRecipeManager",
+    "MixinShapedRecipeSerializer",
+    "MixinShapelessRecipeSerializer",
     "TagTypesMixin"
   ],
   "client": [
