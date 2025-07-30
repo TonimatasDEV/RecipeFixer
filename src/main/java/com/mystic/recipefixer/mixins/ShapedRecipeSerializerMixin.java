@@ -1,12 +1,10 @@
-package com.mystic.itemstackemptyfix.mixin;
+package com.mystic.recipefixer.mixins;
 
 import com.mojang.logging.LogUtils;
 import com.mystic.recipefixer.util.RecipeUtil;
-import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapedRecipePattern;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(targets = "net.minecraft.world.item.crafting.ShapedRecipe$Serializer")
-public class MixinShapedRecipeSerializer {
+public class ShapedRecipeSerializerMixin {
     @Inject(method = "toNetwork", at = @At("HEAD"), cancellable = true)
     private static void toNetworkPatch(RegistryFriendlyByteBuf buf, ShapedRecipe recipe, CallbackInfo ci) {
         if (RecipeUtil.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {

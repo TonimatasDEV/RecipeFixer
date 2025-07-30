@@ -1,4 +1,4 @@
-package com.mystic.itemstackemptyfix.mixin;
+package com.mystic.recipefixer.mixins;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(ClientboundUpdateRecipesPacket.class)
-public abstract class MixinClientboundUpdateRecipesPacket {
+public abstract class ClientboundUpdateRecipesPacketMixin {
     @Mutable
     @Shadow
     @Final
