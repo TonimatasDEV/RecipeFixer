@@ -37,12 +37,10 @@ public abstract class MixinClientboundUpdateRecipesPacket {
                 List<RecipeHolder<?>> recipes = new ArrayList<>();
 
                 for (int i = 0; i < count; i++) {
-                    buf.markReaderIndex(); // allow rollback
-
+                    buf.markReaderIndex();
                     try {
                         RecipeHolder<?> holder = RecipeHolder.STREAM_CODEC.decode(buf);
 
-                        // Validate the ID
                         ResourceLocation id = holder.id();
                         if (!isValidPath(id.getPath())) {
                             LOGGER.warn("[SafeRecipes] Skipping recipe with invalid path '{}'", id);
@@ -52,8 +50,8 @@ public abstract class MixinClientboundUpdateRecipesPacket {
                         recipes.add(holder);
                     } catch (Exception e) {
                         LOGGER.error("[SafeRecipes] Skipping corrupt recipe at index {}: {}", i, e.toString());
-                        buf.resetReaderIndex(); // prevent packet corruption
-                        skipUnknownRecipe(buf);
+                        buf.resetReaderIndex();
+                        safeSkipBrokenRecipe(buf);
                     }
                 }
 
@@ -69,15 +67,16 @@ public abstract class MixinClientboundUpdateRecipesPacket {
                 return path.matches("[a-z0-9_./-]+");
             }
 
-            private void skipUnknownRecipe(RegistryFriendlyByteBuf buf) {
+            private void safeSkipBrokenRecipe(RegistryFriendlyByteBuf buf) {
                 try {
-                    // Best-effort skip: recipe ID + maybe some payload
-                    buf.readResourceLocation(); // attempt to consume the ID
-                    buf.skipBytes(buf.readableBytes()); // skip rest
-                } catch (Exception ignored) {}
+                    // Attempt to read just the recipe ID and discard it
+                    buf.readResourceLocation();
+                } catch (Exception ignored) {
+                    // Do nothing if even that fails — prevents full stream corruption
+                }
             }
         };
 
-        LOGGER.info("[SafeRecipes] Patched ClientboundUpdateRecipesPacket.STREAM_CODEC to safely skip broken recipes");
+        LOGGER.info("[SafeRecipes] Patched ClientboundUpdateRecipesPacket.STREAM_CODEC to skip broken recipes");
     }
 }

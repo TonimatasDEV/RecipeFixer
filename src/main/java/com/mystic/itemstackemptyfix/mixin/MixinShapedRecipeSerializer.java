@@ -1,15 +1,13 @@
 package com.mystic.itemstackemptyfix.mixin;
 
 import com.mojang.logging.LogUtils;
-import com.mystic.itemstackemptyfix.RecipePatcher;
-import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.ShapedRecipe;
-import net.minecraft.world.item.crafting.ShapedRecipePattern;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -17,50 +15,66 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(targets = "net.minecraft.world.item.crafting.ShapedRecipe$Serializer")
 public class MixinShapedRecipeSerializer {
+    @Unique
+    private static final Logger itemstackemptyfix$LOGGER = LogUtils.getLogger();
+
     @Inject(method = "toNetwork", at = @At("HEAD"), cancellable = true)
     private static void toNetworkPatch(RegistryFriendlyByteBuf buf, ShapedRecipe recipe, CallbackInfo ci) {
-        if (RecipePatcher.isBroken(recipe.getResultItem(null), recipe.getIngredients())) {
-            LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapedRecipe: {}", recipe.getGroup());
-            ci.cancel();
+        try {
+            ItemStack result = recipe.getResultItem(null);
+            if (result == null || result.isEmpty()) {
+                itemstackemptyfix$LOGGER.warn("[Mixin] Skipping shaped recipe '{}' due to empty result in toNetwork.", recipe.getGroup());
+                ci.cancel();
+                return;
+            }
+
+            boolean hasValidIngredient = false;
+            for (Ingredient ingredient : recipe.getIngredients()) {
+                if (ingredient != null && !ingredient.isEmpty()) {
+                    hasValidIngredient = true;
+                    break;
+                }
+            }
+
+            if (!hasValidIngredient) {
+                itemstackemptyfix$LOGGER.warn("[Mixin] Skipping shaped recipe '{}' due to no valid ingredients in toNetwork.", recipe.getGroup());
+                ci.cancel();
+            }
+
+        } catch (Exception e) {
+            itemstackemptyfix$LOGGER.error("[Mixin] Error validating shaped recipe during toNetwork: {}", e.getMessage(), e);
+            ci.cancel(); // fail-safe
         }
     }
 
-    @Inject(method = "fromNetwork", at = @At("HEAD"), cancellable = true)
-    private static void fromNetworkPatch(RegistryFriendlyByteBuf buf, CallbackInfoReturnable<ShapedRecipe> cir) {
+    @Inject(method = "fromNetwork", at = @At("RETURN"), cancellable = true)
+    private static void postDeserializePatch(RegistryFriendlyByteBuf buf, CallbackInfoReturnable<ShapedRecipe> cir) {
+        ShapedRecipe recipe = cir.getReturnValue();
+        if (recipe == null) return;
+
         try {
-            String group = buf.readUtf();
-
-            // Safe decode CraftingBookCategory
-            int categoryOrdinal = buf.readVarInt();
-            CraftingBookCategory[] categories = CraftingBookCategory.values();
-            if (categoryOrdinal < 0 || categoryOrdinal >= categories.length) {
-                LogUtils.getLogger().error("[Mixin] Invalid CraftingBookCategory index in shaped recipe '{}': {}", group, categoryOrdinal);
-                cir.setReturnValue(null);
-                return;
-            }
-            CraftingBookCategory category = categories[categoryOrdinal];
-
-            // Safely decode pattern
-            ShapedRecipePattern pattern;
-            try {
-                pattern = ShapedRecipePattern.STREAM_CODEC.decode(buf);
-            } catch (Exception patternEx) {
-                LogUtils.getLogger().error("[Mixin] Failed to decode ShapedRecipePattern in '{}': {}", group, patternEx.toString());
+            ItemStack result = recipe.getResultItem(null);
+            if (result == null || result.isEmpty()) {
+                itemstackemptyfix$LOGGER.warn("[Mixin] Skipping shaped recipe after decode due to empty result: {}", recipe.getGroup());
                 cir.setReturnValue(null);
                 return;
             }
 
-            ItemStack result = ItemStack.STREAM_CODEC.decode(buf);
-
-            if (RecipePatcher.isBroken(result, pattern.ingredients())) {
-                LogUtils.getLogger().error("[Mixin] BLOCKED broken ShapedRecipe: {}", group);
-                cir.setReturnValue(null);
-                return;
+            boolean hasValidIngredient = false;
+            for (Ingredient ingredient : recipe.getIngredients()) {
+                if (ingredient != null && !ingredient.isEmpty()) {
+                    hasValidIngredient = true;
+                    break;
+                }
             }
 
-            cir.setReturnValue(new ShapedRecipe(group, category, pattern, result));
+            if (!hasValidIngredient) {
+                itemstackemptyfix$LOGGER.warn("[Mixin] Skipping shaped recipe after decode due to no valid ingredients: {}", recipe.getGroup());
+                cir.setReturnValue(null);
+            }
+
         } catch (Exception e) {
-            LogUtils.getLogger().error("[Mixin] Exception decoding shaped recipe '{}': {}", e.getClass().getSimpleName(), e.getMessage());
+            itemstackemptyfix$LOGGER.error("[Mixin] Exception while inspecting shaped recipe after decode: {}", e.getMessage(), e);
             cir.setReturnValue(null);
         }
     }
