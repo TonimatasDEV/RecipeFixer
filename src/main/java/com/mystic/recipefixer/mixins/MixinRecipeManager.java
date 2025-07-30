@@ -1,4 +1,4 @@
-package com.mystic.itemstackemptyfix.mixin;
+package com.mystic.recipefixer.mixins;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;

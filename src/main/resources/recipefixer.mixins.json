@@ -1,13 +1,14 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "com.mystic.itemstackemptyfix.mixin",
+  "package": "com.mystic.recipefixer.mixins",
   "refmap": "itemstackemptyfix.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "MixinClientboundUpdateRecipesPacket",
-    "MixinShapedRecipeSerializer",
-    "MixinShapelessRecipeSerializer",
+    "ClientboundUpdateRecipesPacketMixin",
+    "ShapedRecipeSerializerMixin",
+    "ShapelessRecipeSerializerMixin",
+    "ShapedRecipeSerializerMixin",
     "TagTypesMixin"
   ],
   "client": [
